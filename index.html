@@ -1,0 +1,148 @@
+<!doctype html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="shortcut icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<title>Svar på frågor</title>
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f7f7f7;
+}
+* {
+  font-family: "Arial", sans-serif;
+}
+#searchbar {
+  margin: 5px 5px 10px 5px;
+  padding: 5px;
+  border-radius: 10px;
+  width:40%;
+  max-width:600px;
+}
+table, th, td {
+  border: 1px solid;
+}
+td, th {
+  padding: 0 5px 0 5px;
+  word-wrap: break-word;
+}
+td:first-child {
+  color: blue;
+}
+#resultContainer>span {
+	margin: 5px;
+}
+</style>
+<script type="text/javascript" src="questions.txt"></script>
+<script>
+function $(id) { return document.getElementById(id); }
+
+function addRow(table, cellType, text1, text2) {
+	var tr = document.createElement('tr');
+	var td1 = document.createElement(cellType);
+	var td2 = document.createElement(cellType);
+	td1.appendChild(document.createTextNode(text1));
+	td2.appendChild(document.createTextNode(text2));
+	tr.appendChild(td1);
+	tr.appendChild(td2);
+	table.appendChild(tr);
+}
+
+var resetTimerId = null;
+
+function search() {
+	clearResetTimer();
+
+	var inputStr = $('searchbar').value.trim().toLowerCase();
+	if (inputStr.length == 0) return;
+	var input = inputStr.split(/[ ]+/);
+
+	var newResults = document.createElement('table');
+	newResults.id = "results";
+	addRow(newResults, 'th', 'Svar', 'Fråga');
+	
+	var maxRes = parseInt($('maxResults').value)
+
+	var len = questions.length;
+	var searchIndex = $('searchAnswers').checked ? 1 : 0;
+	var foundResults = 0;
+	for (var i = 0; i < len; ++i) {
+		var found = true;
+		for (var j = 0; j < input.length; ++j) {
+			if (!questions[i][searchIndex].toLowerCase().includes(input[j])) {
+				found = false;
+				break;
+			}
+		}
+		
+		if (found) {
+			addRow(newResults, 'td', questions[i][1], questions[i][0]);
+			if (++foundResults >= maxRes) {
+				addRow(newResults, 'td', '...', '...');
+				break;
+			}
+		}
+	}
+	
+	var curResults = $("results");
+	if (foundResults > 0) {
+		curResults.parentNode.replaceChild(newResults, curResults);
+	} else {
+		var msg = document.createElement('span');
+		msg.id = "results";
+		msg.innerHTML = "Inga matchande frågor/svar hittades";
+		curResults.parentNode.replaceChild(msg, curResults);
+	}
+	
+	if ($('autoReset').checked) {
+		resetTimerId = setTimeout(autoResetTimerFunc, 5000);
+	}
+}
+
+function autoResetTimerFunc() {
+	resetTimerId = null;
+	if ($('autoReset').checked && document.activeElement == $('searchbar')) {
+		resetSearch();
+	}
+}
+
+function clearResetTimer() {
+	if (resetTimerId != null) {
+		clearTimeout(resetTimerId);
+		resetTimerId = null;
+	}
+}
+
+function resetSearch() {
+	clearResetTimer();
+	var searchbar = $('searchbar');
+	searchbar.value = '';
+	searchbar.focus();
+}
+
+document.addEventListener('keyup', function(e) {
+    if (e.key == "Escape") {
+        resetSearch();
+	}
+});
+</script>
+</head>
+<body>
+	<input id="searchbar" autocomplete="off" onkeyup="search()" type="search" autofocus>
+	<button type="button" onclick="resetSearch()" title="Rensa sökfältet">Rensa</button>
+	<input type="checkbox" id="autoReset" title="Rensa sökfältet automatiskt" checked>
+	<select name="maxResults" id="maxResults" onchange="search()" title="Max resultat att visa">
+		<option value="10">10</option>
+		<option value="20" selected>20</option>
+		<option value="50">50</option>
+		<option value="100">100</option>
+		<option value="1000">1000</option>
+		<option value="99999999">∞</option>
+	</select>
+	<input type="checkbox" id="searchAnswers" name="searchAnswers" onchange="search()" title="Sök i svaren">
+	<label for="searchAnswers" title="Sök i svaren">Svar</label>
+	<div id="resultContainer"><span id="results">Skriv i sökfältet för att söka frågor</span></div>
+</body>
+</html>
